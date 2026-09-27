@@ -2,7 +2,9 @@ package com.palash.vernacularlearning
 
 import android.app.Activity
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +27,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -132,6 +135,20 @@ fun TeacherDashboard() {
             }
         }
 
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE0F2FE)),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Classroom status", fontWeight = FontWeight.Bold, color = Color(0xFF1D4ED8))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(statusMessage)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Downloaded packs: ${downloadedPacks.joinToString(", ")}")
+            }
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -161,9 +178,12 @@ fun TeacherDashboard() {
                 },
                 translatedText = translatedText,
                 onTranslate = {
+                    statusMessage = "Translated for ${selectedLanguage.label}"
                     translatedText = selectedLanguage.sampleTranslation
+                    tts.speak(translatedText, selectedLanguage.code)
                 },
                 onVoiceInput = {
+                    statusMessage = "Listening for classroom instruction..."
                     voiceAssistant.startListening()
                 }
             )
@@ -173,9 +193,17 @@ fun TeacherDashboard() {
                 onGenerate = {
                     val pack = selectedLanguage.lessonPacks.first()
                     lessonText = "Title: ${pack.title}\n\nObjective: ${pack.objective}\n\nActivity: ${pack.activity}\n\nAssessment: ${pack.assessment}"
+                    statusMessage = "Lesson pack refreshed for ${selectedLanguage.label}"
+                    tts.speak(pack.title, selectedLanguage.code)
+                },
+                onSpeakLesson = {
+                    tts.speak(lessonText, selectedLanguage.code)
                 }
             )
-            else -> WorksheetTab(selectedLanguage = selectedLanguage)
+            else -> WorksheetTab(
+                selectedLanguage = selectedLanguage,
+                onDownload = { statusMessage = "Worksheet downloaded for ${selectedLanguage.label}" }
+            )
         }
     }
 }
@@ -274,16 +302,31 @@ fun TranslationTab(
 fun LessonTab(
     selectedLanguage: LanguageDetail,
     lessonText: String,
-    onGenerate: () -> Unit
+    onGenerate: () -> Unit,
+    onSpeakLesson: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Button(
-            onClick = onGenerate,
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B))
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("Generate lesson")
+            Button(
+                onClick = onGenerate,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B))
+            ) {
+                Text("Generate lesson")
+            }
+
+            Button(
+                onClick = onSpeakLesson,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+            ) {
+                Text("Read aloud")
+            }
         }
 
         Card(
@@ -301,19 +344,30 @@ fun LessonTab(
 }
 
 @Composable
-fun WorksheetTab(selectedLanguage: LanguageDetail) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7FBFA))
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Bilingual worksheet", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Spacer(modifier = Modifier.height(12.dp))
-            selectedLanguage.worksheetTasks.forEachIndexed { index, item ->
-                Text("${index + 1}. $item")
-                if (index != selectedLanguage.worksheetTasks.lastIndex) {
-                    Spacer(modifier = Modifier.height(8.dp))
+fun WorksheetTab(selectedLanguage: LanguageDetail, onDownload: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Button(
+            onClick = onDownload,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E))
+        ) {
+            Text("Download worksheet")
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF7FBFA))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Bilingual worksheet", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Spacer(modifier = Modifier.height(12.dp))
+                selectedLanguage.worksheetTasks.forEachIndexed { index, item ->
+                    Text("${index + 1}. $item")
+                    if (index != selectedLanguage.worksheetTasks.lastIndex) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             }
         }
