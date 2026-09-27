@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>PALASH MTB-MLE Translator</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Jharkhand MTB-MLE Prototype</p>
+          <h1>PALASH Vernacular Classroom Assistant</h1>
+        </div>
+        <div class="status-badges">
+          <span class="badge ok">Offline</span>
+          <span class="badge ok">Android Ready</span>
+        </div>
+      </header>
+
+      <nav class="quick-pills" aria-label="Feature shortcuts">
+        <button class="pill active" data-target="translator-panel">Translation</button>
+        <button class="pill" data-target="voice-panel">Voice Bridge</button>
+        <button class="pill" data-target="lesson-panel">Lesson Builder</button>
+        <button class="pill" data-target="worksheet-panel">Worksheet</button>
+      </nav>
+
+      <main class="content-grid">
+        <section id="translator-panel" class="card primary-panel">
+          <div class="panel-header">
+            <h2>Hindi → Tribal Language Translation</h2>
+            <span class="chip">Prototype</span>
+          </div>
+
+          <div class="field-row">
+            <label for="languageSelect">Target language</label>
+            <select id="languageSelect">
+              <option value="santhali">Santhali</option>
+              <option value="ho">Ho</option>
+              <option value="mundari">Mundari</option>
+            </select>
+          </div>
+
+          <label for="inputText">Hindi classroom text</label>
+          <textarea id="inputText" rows="6">गिनती के साथ बच्चों को 5 तक zählen करें।</textarea>
+
+          <div class="action-row">
+            <button id="translateBtn" class="primary">Translate</button>
+            <button id="speakBtn">Speak output</button>
+          </div>
+
+          <div class="output-box">
+            <div>
+              <span class="label">Translated text</span>
+              <p id="translationOutput">कृपया अनुवाद चलाएँ</p>
+            </div>
+            <div>
+              <span class="label">Latency</span>
+              <p id="latencyOutput">~1.2 s</p>
+            </div>
+          </div>
+        </section>
+
+        <aside id="voice-panel" class="card secondary-panel">
+          <div class="panel-header">
+            <h2>Teacher Voice Bridge</h2>
+            <span class="chip live">Live</span>
+          </div>
+
+          <button id="voiceBtn" class="primary wide">Start Hindi voice translation</button>
+          <div class="voice-stream">
+            <div class="stream-box">
+              <span class="label">Teacher says</span>
+              <p id="voiceInputText">Waiting for Hindi speech...</p>
+            </div>
+            <div class="stream-box">
+              <span class="label">Student hears</span>
+              <p id="voiceOutputText">Translation will appear here</p>
+            </div>
+          </div>
+          <p id="voiceStatus" class="status-text">Speech recognition uses the browser microphone and local phrase mapping.</p>
+        </aside>
+
+        <section id="lesson-panel" class="card full-width">
+          <div class="panel-header">
+            <h2>Auto-generated FLN Lesson</h2>
+            <span class="chip">NIPUN Bharat</span>
+          </div>
+          <div class="action-row compact">
+            <button id="generateLessonBtn" class="primary">Generate lesson script</button>
+          </div>
+          <div id="lessonOutput" class="lesson-output"></div>
+        </section>
+
+        <section id="worksheet-panel" class="card full-width">
+          <div class="panel-header">
+            <h2>Bilingual Worksheet Generator</h2>
+            <span class="chip">Printable</span>
+          </div>
+          <div class="action-row compact">
+            <button id="generateWorksheetBtn" class="primary">Generate worksheet</button>
+          </div>
+          <div id="worksheetOutput" class="worksheet-output"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
