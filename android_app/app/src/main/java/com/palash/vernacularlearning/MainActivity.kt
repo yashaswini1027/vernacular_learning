@@ -1,8 +1,10 @@
 package com.palash.vernacularlearning
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,18 +20,19 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,6 +74,22 @@ fun TeacherDashboard() {
                 "गतिविधि: ${AppData.languages.first().lessonPacks.first().activity}\n\n" +
                 "मूल्यांकन: ${AppData.languages.first().lessonPacks.first().assessment}"
         )
+    }
+
+    val context = LocalContext.current as Activity
+    val voiceAssistant = remember {
+        VoiceAssistant(context) { transcript ->
+            inputText = transcript
+        }
+    }
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+        onResult = { result ->
+            voiceAssistant.handleResult(result.resultCode, result.data)
+        }
+    )
+    LaunchedEffect(speechLauncher) {
+        voiceAssistant.bind(speechLauncher)
     }
 
     val scrollState = rememberScrollState()
@@ -143,6 +162,9 @@ fun TeacherDashboard() {
                 translatedText = translatedText,
                 onTranslate = {
                     translatedText = selectedLanguage.sampleTranslation
+                },
+                onVoiceInput = {
+                    voiceAssistant.startListening()
                 }
             )
             "Lessons" -> LessonTab(
@@ -165,7 +187,8 @@ fun TranslationTab(
     selectedLanguage: LanguageDetail,
     onLanguageChange: (LanguageDetail) -> Unit,
     translatedText: String,
-    onTranslate: () -> Unit
+    onTranslate: () -> Unit,
+    onVoiceInput: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Card(
@@ -208,13 +231,27 @@ fun TranslationTab(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Button(
-            onClick = onTranslate,
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E))
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("Translate")
+            Button(
+                onClick = onVoiceInput,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F59A6))
+            ) {
+                Text("Voice input")
+            }
+
+            Button(
+                onClick = onTranslate,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E))
+            ) {
+                Text("Translate")
+            }
         }
 
         Card(
