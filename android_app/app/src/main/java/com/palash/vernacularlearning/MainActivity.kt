@@ -54,23 +54,22 @@ fun PALASHApp() {
         )
     ) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            TranslationScreen()
+            TeacherDashboard()
         }
     }
 }
 
 @Composable
-fun TranslationScreen() {
+fun TeacherDashboard() {
+    var selectedTab by remember { mutableStateOf("Translation") }
     var inputText by remember { mutableStateOf("गिनती के साथ बच्चों को 5 तक zählen करें।") }
-    var targetLanguage by remember { mutableStateOf("Santhali") }
-    var translatedText by remember {
-        mutableStateOf("ginti के साथ बच्चों को 5 तक zählen करें।")
-    }
+    var selectedLanguage by remember { mutableStateOf(AppData.languages.first()) }
+    var translatedText by remember { mutableStateOf(AppData.languages.first().sampleTranslation) }
     var lessonText by remember {
         mutableStateOf(
-            "उद्देश्य: बच्चों को 1 से 10 तक संख्याओं को पहचानना सीखें।\n\n" +
-                "गतिविधि: वस्तुओं को गिनें, चित्र पहचानें, सही उत्तर चुनें।\n\n" +
-                "मूल्यांकन: कितने अंक दिख रहे हैं?"
+            "उद्देश्य: ${AppData.languages.first().lessonPacks.first().objective}\n\n" +
+                "गतिविधि: ${AppData.languages.first().lessonPacks.first().activity}\n\n" +
+                "मूल्यांकन: ${AppData.languages.first().lessonPacks.first().assessment}"
         )
     }
 
@@ -83,19 +82,92 @@ fun TranslationScreen() {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "PALASH",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF0F766E)
-        )
-        Text(
-            text = "Vernacular Classroom Assistant",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color(0xFF18312C)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(
+                    text = "PALASH",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F766E)
+                )
+                Text(
+                    text = "Mother Tongue Learning Assistant",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF18312C)
+                )
+            }
+            Card(
+                shape = RoundedCornerShape(999.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFDCFCE7))
+            ) {
+                Text(
+                    text = "Offline ready",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    color = Color(0xFF166534),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf("Translation", "Lessons", "Worksheet").forEach { tab ->
+                Button(
+                    onClick = { selectedTab = tab },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selectedTab == tab) Color(0xFF0F766E) else Color(0xFFEAF3F2)
+                    )
+                ) {
+                    Text(text = tab, color = if (selectedTab == tab) Color.White else Color(0xFF18312C))
+                }
+            }
+        }
+
+        when (selectedTab) {
+            "Translation" -> TranslationTab(
+                inputText = inputText,
+                onInputTextChange = { inputText = it },
+                selectedLanguage = selectedLanguage,
+                onLanguageChange = { language ->
+                    selectedLanguage = language
+                    translatedText = language.sampleTranslation
+                },
+                translatedText = translatedText,
+                onTranslate = {
+                    translatedText = selectedLanguage.sampleTranslation
+                }
+            )
+            "Lessons" -> LessonTab(
+                selectedLanguage = selectedLanguage,
+                lessonText = lessonText,
+                onGenerate = {
+                    val pack = selectedLanguage.lessonPacks.first()
+                    lessonText = "Title: ${pack.title}\n\nObjective: ${pack.objective}\n\nActivity: ${pack.activity}\n\nAssessment: ${pack.assessment}"
+                }
+            )
+            else -> WorksheetTab(selectedLanguage = selectedLanguage)
+        }
+    }
+}
+
+@Composable
+fun TranslationTab(
+    inputText: String,
+    onInputTextChange: (String) -> Unit,
+    selectedLanguage: LanguageDetail,
+    onLanguageChange: (LanguageDetail) -> Unit,
+    translatedText: String,
+    onTranslate: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -105,26 +177,24 @@ fun TranslationScreen() {
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text("Select language", fontWeight = FontWeight.Bold)
+                Text("Target language", fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     AppData.languages.forEach { language ->
                         Button(
-                            onClick = {
-                                targetLanguage = language
-                                translatedText = when (language) {
-                                    "Santhali" -> "ginti के साथ बच्चों को 5 तक zählen करें।"
-                                    "Ho" -> "ginti te bachon ko 5 tak ganna sikhen."
-                                    else -> "ginti re bacha ko 5 tak ganna sikhon."
-                                }
-                            },
+                            onClick = { onLanguageChange(language) },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E))
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (selectedLanguage.code == language.code) Color(0xFF0F766E) else Color(0xFFEAF3F2)
+                            )
                         ) {
-                            Text(language)
+                            Text(
+                                text = language.label,
+                                color = if (selectedLanguage.code == language.code) Color.White else Color(0xFF18312C)
+                            )
                         }
                     }
                 }
@@ -133,19 +203,13 @@ fun TranslationScreen() {
 
         OutlinedTextField(
             value = inputText,
-            onValueChange = { inputText = it },
+            onValueChange = onInputTextChange,
             label = { Text("Hindi classroom text") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Button(
-            onClick = {
-                translatedText = when (targetLanguage) {
-                    "Santhali" -> "ginti के साथ बच्चों को 5 तक zählen करें।"
-                    "Ho" -> "ginti te bachon ko 5 tak ganna sikhen."
-                    else -> "ginti re bacha ko 5 tak ganna sikhon."
-                }
-            },
+            onClick = onTranslate,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E))
@@ -162,25 +226,22 @@ fun TranslationScreen() {
                 Text("Translated text", color = Color(0xFF5E716D), fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(translatedText, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Latency target: under 3s", color = Color(0xFF0F766E), fontWeight = FontWeight.Medium)
             }
         }
+    }
+}
 
-        Divider()
-
-        Text(
-            text = "FLN Lesson Generator",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF18312C)
-        )
-
+@Composable
+fun LessonTab(
+    selectedLanguage: LanguageDetail,
+    lessonText: String,
+    onGenerate: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Button(
-            onClick = {
-                val tokens = AppData.lessonTemplates[targetLanguage] ?: listOf("आओ, हम सीखते हैं।")
-                lessonText = "उद्देश्य: बच्चों को 1 से 10 तक संख्याओं को पहचानना सीखें.\n\n" +
-                    "गतिविधि:\n• ${tokens[0]}\n• ${tokens[1]}\n• ${tokens[2]}\n\n" +
-                    "मूल्यांकन: $targetLanguage में कितने अंक दिख रहे हैं?"
-            },
+            onClick = onGenerate,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B))
@@ -194,29 +255,28 @@ fun TranslationScreen() {
             colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8ED))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
+                Text("${selectedLanguage.label} lesson pack", fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(lessonText)
             }
         }
+    }
+}
 
-        Divider()
-
-        Text(
-            text = "Worksheet Output",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF18312C)
-        )
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF7FBFA))
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                val items = AppData.worksheetItems[targetLanguage] ?: listOf("Worksheet")
-                items.forEachIndexed { index, item ->
-                    Text("${index + 1}. $item")
-                    if (index != items.lastIndex) Spacer(modifier = Modifier.height(8.dp))
+@Composable
+fun WorksheetTab(selectedLanguage: LanguageDetail) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7FBFA))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Bilingual worksheet", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+            selectedLanguage.worksheetTasks.forEachIndexed { index, item ->
+                Text("${index + 1}. $item")
+                if (index != selectedLanguage.worksheetTasks.lastIndex) {
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
