@@ -2,7 +2,6 @@ package com.palash.vernacularlearning
 
 import android.app.Activity
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -67,30 +66,46 @@ fun PALASHApp() {
 
 @Composable
 fun TeacherDashboard() {
+    val context = LocalContext.current as Activity
+    val teacherStore = remember { TeacherStore(context) }
     var selectedTab by remember { mutableStateOf("Translation") }
     var inputText by remember { mutableStateOf("गिनती के साथ बच्चों को 5 तक zählen करें।") }
-    var selectedLanguage by remember { mutableStateOf(AppData.languages.first()) }
-    var translatedText by remember { mutableStateOf(AppData.languages.first().sampleTranslation) }
+    var selectedLanguage by remember {
+        mutableStateOf(
+            AppData.languages.firstOrNull { it.code == teacherStore.loadLanguage(AppData.languages.first().code) }
+                ?: AppData.languages.first()
+        )
+    }
+    var translatedText by remember { mutableStateOf(selectedLanguage.sampleTranslation) }
+    var statusMessage by remember { mutableStateOf("Ready for classroom use") }
+    var downloadedPacks by remember { mutableStateOf(listOf("Counting", "Shapes", "Greetings")) }
     var lessonText by remember {
         mutableStateOf(
-            "उद्देश्य: ${AppData.languages.first().lessonPacks.first().objective}\n\n" +
-                "गतिविधि: ${AppData.languages.first().lessonPacks.first().activity}\n\n" +
-                "मूल्यांकन: ${AppData.languages.first().lessonPacks.first().assessment}"
+            teacherStore.loadLesson(
+                "उद्देश्य: ${AppData.languages.first().lessonPacks.first().objective}\n\n" +
+                    "गतिविधि: ${AppData.languages.first().lessonPacks.first().activity}\n\n" +
+                    "मूल्यांकन: ${AppData.languages.first().lessonPacks.first().assessment}"
+            )
         )
     }
 
-    val context = LocalContext.current as Activity
     val voiceAssistant = remember {
         VoiceAssistant(context) { transcript ->
             inputText = transcript
         }
     }
+    val tts = remember { VernacularTts(context) }
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
         onResult = { result ->
             voiceAssistant.handleResult(result.resultCode, result.data)
         }
     )
+    DisposableEffect(Unit) {
+        onDispose {
+            tts.shutdown()
+        }
+    }
     LaunchedEffect(speechLauncher) {
         voiceAssistant.bind(speechLauncher)
     }
@@ -146,6 +161,8 @@ fun TeacherDashboard() {
                 Text(statusMessage)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Downloaded packs: ${downloadedPacks.joinToString(", ")}")
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Students present: 24 | Attendance: 92%")
             }
         }
 
@@ -175,6 +192,7 @@ fun TeacherDashboard() {
                 onLanguageChange = { language ->
                     selectedLanguage = language
                     translatedText = language.sampleTranslation
+                    teacherStore.saveLanguage(language.code)
                 },
                 translatedText = translatedText,
                 onTranslate = {
@@ -193,10 +211,12 @@ fun TeacherDashboard() {
                 onGenerate = {
                     val pack = selectedLanguage.lessonPacks.first()
                     lessonText = "Title: ${pack.title}\n\nObjective: ${pack.objective}\n\nActivity: ${pack.activity}\n\nAssessment: ${pack.assessment}"
+                    teacherStore.saveLesson(lessonText)
                     statusMessage = "Lesson pack refreshed for ${selectedLanguage.label}"
                     tts.speak(pack.title, selectedLanguage.code)
                 },
                 onSpeakLesson = {
+                    teacherStore.saveLesson(lessonText)
                     tts.speak(lessonText, selectedLanguage.code)
                 }
             )
