@@ -170,7 +170,7 @@ fun TeacherDashboard() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            listOf("Translation", "Lessons", "Worksheet").forEach { tab ->
+            listOf("Translation", "Lessons", "Worksheet", "Classroom").forEach { tab ->
                 Button(
                     onClick = { selectedTab = tab },
                     shape = RoundedCornerShape(12.dp),
@@ -220,6 +220,7 @@ fun TeacherDashboard() {
                     tts.speak(lessonText, selectedLanguage.code)
                 }
             )
+            "Classroom" -> ClassroomTab(classProgress = AppData.classProgress)
             else -> WorksheetTab(
                 selectedLanguage = selectedLanguage,
                 onDownload = { statusMessage = "Worksheet downloaded for ${selectedLanguage.label}" }
@@ -358,6 +359,45 @@ fun LessonTab(
                 Text("${selectedLanguage.label} lesson pack", fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(lessonText)
+            }
+        }
+    }
+}
+
+@Composable
+fun ClassroomTab(classProgress: List<StudentProgress>) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Class overview", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF14532D))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Average score: 80%")
+                Text("Participation: 92%")
+                Text("Support needed: 2 students")
+            }
+        }
+
+        classProgress.forEach { student ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(student.name, fontWeight = FontWeight.Bold)
+                        Text(student.status, color = Color(0xFF0F766E), fontWeight = FontWeight.Medium)
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("${student.level} • Score: ${student.score}% • Attendance: ${student.attendance}%")
+                }
             }
         }
     }

@@ -16,6 +16,14 @@ data class LanguageDetail(
     val worksheetTasks: List<String>
 )
 
+data class StudentProgress(
+    val name: String,
+    val level: String,
+    val score: Int,
+    val attendance: Int,
+    val status: String
+)
+
 object AppData {
     val languages = listOf(
         LanguageDetail(
@@ -78,5 +86,13 @@ object AppData {
                 "Flashcard banaiye"
             )
         )
+    )
+
+    val classProgress = listOf(
+        StudentProgress(name = "Asha", level = "Grade 1", score = 88, attendance = 96, status = "Strong"),
+        StudentProgress(name = "Raju", level = "Grade 1", score = 74, attendance = 89, status = "Needs support"),
+        StudentProgress(name = "Sita", level = "Grade 2", score = 91, attendance = 94, status = "Strong"),
+        StudentProgress(name = "Mohan", level = "Grade 2", score = 82, attendance = 90, status = "On track"),
+        StudentProgress(name = "Dinesh", level = "Grade 1", score = 66, attendance = 85, status = "Watch closely")
     )
 }
